@@ -6,6 +6,10 @@ import { useToast } from '../components/Toast'
 import { Camera, Check, ChevronRight, User } from 'lucide-react'
 import ShareButton from '../components/ShareButton'
 
+import type { Database } from '../lib/database.types'
+
+type ProfileInsert = Database['public']['Tables']['profiles']['Insert']
+
 const Onboarding: React.FC = () => {
   const { user, profile, refreshProfile } = useAuth()
   const [step, setStep] = useState(1)
@@ -14,15 +18,15 @@ const Onboarding: React.FC = () => {
   const [bio, setBio] = useState('')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-  
+
   const [isCheckingUsername, setIsCheckingUsername] = useState(false)
   const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+
   const navigate = useNavigate()
   const { toast } = useToast()
 
-  // Redirect if profile already exists and is complete
+  // Redirect if profile already complete
   useEffect(() => {
     if (profile && profile.username) {
       navigate('/inbox', { replace: true })
@@ -42,7 +46,7 @@ const Onboarding: React.FC = () => {
         .select('username')
         .eq('username', username.toLowerCase())
         .maybeSingle()
-      
+
       setIsUsernameAvailable(!data)
       setIsCheckingUsername(false)
     }
@@ -64,7 +68,7 @@ const Onboarding: React.FC = () => {
     setIsSubmitting(true)
 
     try {
-      let uploadedAvatarUrl = null
+      let uploadedAvatarUrl: string | null = null
 
       if (avatarFile) {
         const fileExt = avatarFile.name.split('.').pop()
@@ -79,19 +83,21 @@ const Onboarding: React.FC = () => {
         const { data: { publicUrl } } = supabase.storage
           .from('avatars')
           .getPublicUrl(fileName)
-        
+
         uploadedAvatarUrl = publicUrl
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          username: username.toLowerCase(),
-          display_name: displayName || username,
-          bio,
-          avatar_url: uploadedAvatarUrl,
-        })
+    const payload: ProfileInsert = {
+      id: user.id,
+      username: username.toLowerCase(),
+      display_name: displayName || username,
+      bio,
+      avatar_url: uploadedAvatarUrl,
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .upsert(payload)
 
       if (error) throw error
 
@@ -132,13 +138,13 @@ const Onboarding: React.FC = () => {
               <h1 className="text-3xl font-black mb-2">Pick a username.</h1>
               <p className="text-gray-400">This will be your unique Whispr link.</p>
             </div>
-            
+
             <div className="relative">
               <input
                 type="text"
                 value={username}
                 onChange={(e) =>
-                  setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '')) // ✅ fixed regex 0-9
+                  setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '')) // ✅ fixed regex
                 }
                 placeholder="username"
                 className="w-full rounded-2xl bg-gray-900/50 p-5 text-xl font-bold border border-gray-800 focus:outline-none focus:border-purple-500 transition-all text-center"

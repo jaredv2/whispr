@@ -30,7 +30,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete, isSu
     try {
       setResult(null)
       await startRecording()
-    } catch (err) {
+    } catch {
       toast('Could not access microphone', 'error')
     }
   }
@@ -48,7 +48,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete, isSu
       await onRecordingComplete(result.blob, editedTranscript, result.duration)
       setResult(null)
       setEditedTranscript('')
-    } catch (err) {
+    } catch {
       toast('Failed to send message', 'error')
     }
   }
