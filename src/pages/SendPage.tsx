@@ -1,0 +1,171 @@
+import React, { useEffect, useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import type { Database } from '../lib/database.types'
+import { useToast } from '../components/Toast'
+import AudioRecorder from '../components/AudioRecorder'
+import { User, Check, Mic } from 'lucide-react'
+
+type Profile = Database['public']['Tables']['profiles']['Row']
+
+const SendPage: React.FC = () => {
+  const { username } = useParams<{ username: string }>()
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [isSent, setIsSent] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!username) return
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('username', username.toLowerCase())
+          .single()
+
+        if (error) throw error
+        setProfile(data)
+      } catch (err) {
+        console.error('Error fetching profile:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [username])
+
+  const handleRecordingComplete = async (blob: Blob, transcript: string, duration: number) => {
+    if (!profile) return
+    setIsSubmitting(true)
+
+    try {
+      const messageId = crypto.randomUUID()
+      const filePath = `${profile.id}/${messageId}.webm`
+
+      // 1. Upload audio to storage
+      const { error: uploadError } = await supabase.storage
+        .from('voice-messages')
+        .upload(filePath, blob)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('voice-messages')
+        .getPublicUrl(filePath)
+
+      // 2. Insert message record
+      const { error: dbError } = await (supabase as any)
+        .from('messages')
+        .insert({
+          id: messageId,
+          recipient_id: profile.id,
+          audio_url: publicUrl,
+          transcript,
+          duration_seconds: duration,
+        })
+
+      if (dbError) throw dbError
+
+      setIsSent(true)
+      toast('Your voice was sent 👻', 'success')
+    } catch (err) {
+      console.error('Error sending message:', err)
+      toast('Failed to send message', 'error')
+      throw err
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <h1 className="text-4xl font-black mb-4">User not found.</h1>
+        <p className="text-gray-400 mb-8">This Whispr link doesn't seem to exist.</p>
+        <Link to="/" className="rounded-full bg-white px-8 py-3 font-bold text-black transition-all hover:bg-gray-200">
+          Go Home
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col items-center px-6 py-12 md:py-24">
+      <div className="w-full max-w-md">
+        {!isSent ? (
+          <div className="flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-8">
+            <div className="mb-6 h-24 w-24 overflow-hidden rounded-full border-2 border-purple-500/30 bg-gray-900 shadow-xl">
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile.display_name ?? ''} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-gray-700">
+                  <User size={48} />
+                </div>
+              )}
+            </div>
+
+            <h1 className="mb-1 text-2xl font-black">{profile.display_name}</h1>
+            <p className="mb-8 text-sm text-gray-500">@{profile.username}</p>
+            
+            {profile.bio && (
+              <p className="mb-12 text-gray-400 text-sm bg-gray-900/30 p-4 rounded-2xl border border-gray-800">
+                {profile.bio}
+              </p>
+            )}
+
+            <AudioRecorder 
+              onRecordingComplete={handleRecordingComplete} 
+              isSubmitting={isSubmitting} 
+            />
+            
+            <p className="mt-12 text-xs text-gray-600">
+              Your message is 100% anonymous. <br />
+              The recipient will hear your voice but won't know it's you.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center text-center py-20 animate-in fade-in zoom-in-95 duration-500">
+            <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-purple-600 shadow-[0_0_50px_-5px_rgba(168,85,247,0.6)]">
+              <Check size={48} className="text-white" strokeWidth={3} />
+            </div>
+            <h1 className="text-4xl font-black mb-4">Sent!</h1>
+            <p className="text-lg text-gray-400 mb-12">
+              Your voice was delivered 👻 <br />
+              They'll hear it soon.
+            </p>
+            
+            <div className="flex flex-col w-full gap-4">
+              <button 
+                onClick={() => setIsSent(false)}
+                className="active-scale flex items-center justify-center gap-2 rounded-2xl border border-gray-800 py-5 font-bold text-white hover:bg-gray-900 transition-colors"
+              >
+                <Mic size={20} />
+                Send another one
+              </button>
+              <Link 
+                to="/" 
+                className="active-scale rounded-2xl bg-white py-5 font-bold text-black transition-all hover:bg-gray-200"
+              >
+                Create your own Whispr
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default SendPage

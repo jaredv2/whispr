@@ -1,0 +1,150 @@
+import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
+import { supabase } from '../lib/supabase'
+import type { Database } from '../lib/database.types'
+import MessageCard from '../components/MessageCard'
+import ShareButton from '../components/ShareButton'
+import { Settings, LogOut, User, Ghost } from 'lucide-react'
+
+type Message = Database['public']['Tables']['messages']['Row']
+
+const Inbox: React.FC = () => {
+  const { profile, signOut } = useAuth()
+  const [messages, setMessages] = useState<Message[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!profile) return
+
+    const fetchMessages = async () => {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('recipient_id', profile.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching messages:', error)
+      } else {
+        setMessages(data || [])
+      }
+      setLoading(false)
+    }
+
+    fetchMessages()
+
+    // Real-time subscription
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `recipient_id=eq.${profile.id}`,
+        },
+        (payload) => {
+          setMessages((prev) => [payload.new as Message, ...prev])
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [profile])
+
+  const handleListened = (id: string) => {
+    setMessages((prev) =>
+      prev.map((msg) => (msg.id === id ? { ...msg, listened: true } : msg))
+    )
+  }
+
+  const shareUrl = `${window.location.origin}/u/${profile?.username}`
+
+  return (
+    <div className="flex min-h-screen flex-col px-6 py-8">
+      {/* Header */}
+      <header className="mb-10 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 overflow-hidden rounded-full border border-purple-500/30 bg-gray-900">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Profile" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-gray-700">
+                <User size={24} />
+              </div>
+            )}
+          </div>
+          <div>
+            <h2 className="text-lg font-black leading-tight">{profile?.display_name}</h2>
+            <p className="text-xs text-gray-500">@{profile?.username}</p>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <Link
+            to="/settings"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 border border-gray-800 text-gray-400 hover:text-white transition-colors"
+          >
+            <Settings size={20} />
+          </Link>
+          <button
+            onClick={() => signOut()}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 border border-gray-800 text-gray-400 hover:text-red-500 transition-colors"
+          >
+            <LogOut size={20} />
+          </button>
+        </div>
+      </header>
+
+      {/* Share Section */}
+      <section className="mb-12 rounded-3xl bg-purple-600/10 p-6 border border-purple-500/20">
+        <h3 className="mb-1 text-sm font-bold">Your Whispr link</h3>
+        <p className="mb-4 text-xs text-gray-400">Share this to receive anonymous voices.</p>
+        <div className="mb-4 overflow-hidden rounded-xl bg-black/40 p-4 font-mono text-xs text-purple-400 break-all border border-purple-500/20">
+          {shareUrl}
+        </div>
+        <ShareButton url={shareUrl} className="w-full text-sm py-3" />
+      </section>
+
+      {/* Messages List */}
+      <main className="flex flex-1 flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-black">Inbox</h3>
+          <span className="rounded-full bg-gray-900 px-3 py-1 text-[10px] font-bold text-gray-500 border border-gray-800 uppercase tracking-widest">
+            {messages.length} total
+          </span>
+        </div>
+
+        {loading ? (
+          <div className="flex flex-col gap-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-32 w-full animate-pulse rounded-3xl bg-gray-900/50 border border-gray-800" />
+            ))}
+          </div>
+        ) : messages.length > 0 ? (
+          <div className="grid gap-4 pb-12">
+            {messages.map((msg) => (
+              <MessageCard key={msg.id} message={msg} onListened={handleListened} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center py-20 text-center animate-in fade-in slide-in-from-bottom-4">
+            <div className="mb-6 rounded-full bg-gray-900 p-8 border border-gray-800 text-gray-700">
+              <Ghost size={64} />
+            </div>
+            <h4 className="mb-2 text-xl font-bold text-gray-400">Silence... for now.</h4>
+            <p className="max-w-[200px] text-sm text-gray-600">
+              Share your link to get your first voice note.
+            </p>
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}
+
+export default Inbox
