@@ -6,10 +6,6 @@ import { useToast } from '../components/Toast'
 import { Camera, Check, ChevronRight, User } from 'lucide-react'
 import ShareButton from '../components/ShareButton'
 
-import type { Database } from '../lib/database.types'
-
-type ProfileInsert = Database['public']['Tables']['profiles']['Insert']
-
 const Onboarding: React.FC = () => {
   const { user, profile, refreshProfile } = useAuth()
   const [step, setStep] = useState(1)
@@ -87,17 +83,17 @@ const Onboarding: React.FC = () => {
         uploadedAvatarUrl = publicUrl
       }
 
-    const payload: ProfileInsert = {
-      id: user.id,
-      username: username.toLowerCase(),
-      display_name: displayName || username,
-      bio,
-      avatar_url: uploadedAvatarUrl,
-    }
 
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('profiles')
-      .upsert(payload)
+      .upsert({
+        id: user.id,
+        username: username.toLowerCase(),
+        display_name: displayName || username,
+        bio,
+        avatar_url: uploadedAvatarUrl,
+      })
 
       if (error) throw error
 
