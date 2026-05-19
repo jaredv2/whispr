@@ -43,7 +43,7 @@ const Login: React.FC = () => {
   const handleLogin = async () => {
     try {
       await signInWithGoogle()
-    } catch (err) {
+    } catch {
       toast('Login failed. Please try again.', 'error')
     }
   }

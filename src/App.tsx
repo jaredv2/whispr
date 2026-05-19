@@ -10,6 +10,9 @@ import Onboarding from './pages/Onboarding'
 import Inbox from './pages/Inbox'
 import SendPage from './pages/SendPage'
 import Settings from './pages/Settings'
+import AuthCallback from './pages/AuthCallback'
+
+// inside your routes:
 
 const NotFound = () => (
   <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
@@ -34,6 +37,7 @@ function App() {
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/u/:username" element={<SendPage />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               
               {/* Protected Routes */}
               <Route 

@@ -1,3 +1,4 @@
+// Inbox.tsx
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -34,9 +35,9 @@ const Inbox: React.FC = () => {
 
     fetchMessages()
 
-    // Real-time subscription
+    // Realtime subscription
     const channel = supabase
-      .channel('schema-db-changes')
+      .channel(`inbox:${profile.id}`) // ✅ scoped channel name, not global
       .on(
         'postgres_changes',
         {
@@ -47,6 +48,19 @@ const Inbox: React.FC = () => {
         },
         (payload) => {
           setMessages((prev) => [payload.new as Message, ...prev])
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'messages',
+          filter: `recipient_id=eq.${profile.id}`,
+        },
+        (payload) => {
+          // ✅ Handle deletes in realtime too
+          setMessages((prev) => prev.filter((m) => m.id !== payload.old.id))
         }
       )
       .subscribe()
@@ -61,6 +75,9 @@ const Inbox: React.FC = () => {
       prev.map((msg) => (msg.id === id ? { ...msg, listened: true } : msg))
     )
   }
+
+  // ✅ Unread count
+  const unreadCount = messages.filter((m) => !m.listened).length
 
   const shareUrl = `${window.location.origin}/u/${profile?.username}`
 
@@ -113,7 +130,15 @@ const Inbox: React.FC = () => {
       {/* Messages List */}
       <main className="flex flex-1 flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-black">Inbox</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-black">Inbox</h3>
+            {/* ✅ Unread badge */}
+            {unreadCount > 0 && (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-600 text-[10px] font-black text-white">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </div>
           <span className="rounded-full bg-gray-900 px-3 py-1 text-[10px] font-bold text-gray-500 border border-gray-800 uppercase tracking-widest">
             {messages.length} total
           </span>

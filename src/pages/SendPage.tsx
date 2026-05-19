@@ -1,3 +1,4 @@
+// SendPage.tsx
 import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -7,6 +8,10 @@ import AudioRecorder from '../components/AudioRecorder'
 import { User, Check, Mic } from 'lucide-react'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
+
+const MAX_FILE_SIZE = 10_000_000 // 10MB
+const MAX_DURATION = 60 // seconds
+const ALLOWED_MIME_TYPES = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/webm;codecs=opus']
 
 const SendPage: React.FC = () => {
   const { username } = useParams<{ username: string }>()
@@ -40,16 +45,43 @@ const SendPage: React.FC = () => {
 
   const handleRecordingComplete = async (blob: Blob, transcript: string, duration: number) => {
     if (!profile) return
+
+    // ✅ Validate blob before uploading
+    if (blob.size === 0) {
+      toast('Recording is empty — please try again', 'error')
+      return
+    }
+
+    if (blob.size > MAX_FILE_SIZE) {
+      toast('Recording is too large (max 10MB)', 'error')
+      return
+    }
+
+    if (duration > MAX_DURATION) {
+      toast('Recording is too long (max 60 seconds)', 'error')
+      return
+    }
+
+    // ✅ Validate mime type
+    const mimeBase = blob.type.split(';')[0]
+    if (blob.type && !ALLOWED_MIME_TYPES.some((m) => m.startsWith(mimeBase))) {
+      toast('Invalid audio format', 'error')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
       const messageId = crypto.randomUUID()
       const filePath = `${profile.id}/${messageId}.webm`
 
-      // 1. Upload audio to storage
+      // ✅ Upload with explicit content type
       const { error: uploadError } = await supabase.storage
         .from('voice-messages')
-        .upload(filePath, blob)
+        .upload(filePath, blob, {
+          contentType: blob.type || 'audio/webm',
+          cacheControl: '3600',
+        })
 
       if (uploadError) throw uploadError
 
@@ -57,15 +89,21 @@ const SendPage: React.FC = () => {
         .from('voice-messages')
         .getPublicUrl(filePath)
 
-      // 2. Insert message record
+      // ✅ Sanitize transcript — strip any HTML/script tags
+      const cleanTranscript = transcript
+        .replace(/<[^>]*>/g, '')
+        .trim()
+        .slice(0, 1000) // cap at 1000 chars
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: dbError } = await (supabase as any)
         .from('messages')
         .insert({
           id: messageId,
           recipient_id: profile.id,
           audio_url: publicUrl,
-          transcript,
-          duration_seconds: duration,
+          transcript: cleanTranscript,
+          duration_seconds: Math.min(duration, MAX_DURATION),
         })
 
       if (dbError) throw dbError
@@ -84,7 +122,7 @@ const SendPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent" />
       </div>
     )
   }
@@ -118,18 +156,18 @@ const SendPage: React.FC = () => {
 
             <h1 className="mb-1 text-2xl font-black">{profile.display_name}</h1>
             <p className="mb-8 text-sm text-gray-500">@{profile.username}</p>
-            
+
             {profile.bio && (
               <p className="mb-12 text-gray-400 text-sm bg-gray-900/30 p-4 rounded-2xl border border-gray-800">
                 {profile.bio}
               </p>
             )}
 
-            <AudioRecorder 
-              onRecordingComplete={handleRecordingComplete} 
-              isSubmitting={isSubmitting} 
+            <AudioRecorder
+              onRecordingComplete={handleRecordingComplete}
+              isSubmitting={isSubmitting}
             />
-            
+
             <p className="mt-12 text-xs text-gray-600">
               Your message is 100% anonymous. <br />
               The recipient will hear your voice but won't know it's you.
@@ -145,17 +183,17 @@ const SendPage: React.FC = () => {
               Your voice was delivered 👻 <br />
               They'll hear it soon.
             </p>
-            
+
             <div className="flex flex-col w-full gap-4">
-              <button 
+              <button
                 onClick={() => setIsSent(false)}
                 className="active-scale flex items-center justify-center gap-2 rounded-2xl border border-gray-800 py-5 font-bold text-white hover:bg-gray-900 transition-colors"
               >
                 <Mic size={20} />
                 Send another one
               </button>
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="active-scale rounded-2xl bg-white py-5 font-bold text-black transition-all hover:bg-gray-200"
               >
                 Create your own Whispr

@@ -7,6 +7,14 @@ import { type Database } from '../lib/database.types'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
+// ✅ Always use production URL in prod, localhost in dev
+const getRedirectUrl = () => {
+  if (import.meta.env.PROD) {
+    return 'https://usewhispr.vercel.app/auth/callback'
+  }
+  return `${window.location.origin}/auth/callback`
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -40,26 +48,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: { session } } = await supabase.auth.getSession()
       setSession(session)
       setUser(session?.user ?? null)
-      
+
       if (session?.user) {
         await fetchProfile(session.user.id)
       }
-      
+
       setLoading(false)
     }
 
     initAuth()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-      
+
       if (session?.user) {
         await fetchProfile(session.user.id)
       } else {
         setProfile(null)
       }
-      
+
       setLoading(false)
     })
 
@@ -70,7 +78,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: getRedirectUrl(), // ✅ correct URL per environment
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       },
     })
     if (error) throw error
@@ -79,6 +91,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
+    setProfile(null)
+    setUser(null)
+    setSession(null)
   }
 
   const refreshProfile = async () => {
