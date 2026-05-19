@@ -59,8 +59,13 @@ const Settings: React.FC = () => {
     if (!profile) return
     setIsDeleting(true)
     try {
-      const { data: messages, error: fetchError } = await supabase
-        .from('messages').select('id, audio_url').eq('recipient_id', profile.id)
+      type MessageAudioRow = { id: string; audio_url: string }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: messages, error: fetchError } = await (supabase as any)
+        .from('messages')
+        .select('id, audio_url')
+        .eq('recipient_id', profile.id) as { data: MessageAudioRow[] | null, error: unknown }
       if (fetchError) throw fetchError
 
       if (messages && messages.length > 0) {
