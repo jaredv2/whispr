@@ -9,9 +9,6 @@ import { User, Check, Mic } from 'lucide-react'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
-const MAX_FILE_SIZE = 10_000_000 // 10MB
-const MAX_DURATION = 60 // seconds
-const ALLOWED_MIME_TYPES = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/webm;codecs=opus']
 
 const SendPage: React.FC = () => {
   const { username } = useParams<{ username: string }>()
@@ -44,80 +41,46 @@ const SendPage: React.FC = () => {
   }, [username])
 
   const handleRecordingComplete = async (blob: Blob, transcript: string, duration: number) => {
-    if (!profile) return
+  if (!profile) return
 
-    // ✅ Validate blob before uploading
-    if (blob.size === 0) {
-      toast('Recording is empty — please try again', 'error')
-      return
+  // client-side guards stay
+  if (blob.size === 0) { toast('Recording is empty', 'error'); return }
+  if (blob.size > 10_000_000) { toast('Recording too large (max 10MB)', 'error'); return }
+  if (duration > 60) { toast('Recording too long (max 60s)', 'error'); return }
+
+  setIsSubmitting(true)
+
+  try {
+    const formData = new FormData()
+    formData.append('audio', blob, 'voice.webm')
+    formData.append('recipient_id', profile.id)
+    formData.append('transcript', transcript.replace(/<[^>]*>/g, '').slice(0, 1000))
+    formData.append('duration', String(duration))
+
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-message`,
+      {
+        method: 'POST',
+        body: formData,
+      }
+    )
+
+    const json = await res.json()
+
+    if (!res.ok) {
+      throw new Error(json.error ?? 'Failed to send')
     }
 
-    if (blob.size > MAX_FILE_SIZE) {
-      toast('Recording is too large (max 10MB)', 'error')
-      return
-    }
-
-    if (duration > MAX_DURATION) {
-      toast('Recording is too long (max 60 seconds)', 'error')
-      return
-    }
-
-    // ✅ Validate mime type
-    const mimeBase = blob.type.split(';')[0]
-    if (blob.type && !ALLOWED_MIME_TYPES.some((m) => m.startsWith(mimeBase))) {
-      toast('Invalid audio format', 'error')
-      return
-    }
-
-    setIsSubmitting(true)
-
-    try {
-      const messageId = crypto.randomUUID()
-      const filePath = `${profile.id}/${messageId}.webm`
-
-      // ✅ Upload with explicit content type
-      const { error: uploadError } = await supabase.storage
-        .from('voice-messages')
-        .upload(filePath, blob, {
-          contentType: blob.type || 'audio/webm',
-          cacheControl: '3600',
-        })
-
-      if (uploadError) throw uploadError
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('voice-messages')
-        .getPublicUrl(filePath)
-
-      // ✅ Sanitize transcript — strip any HTML/script tags
-      const cleanTranscript = transcript
-        .replace(/<[^>]*>/g, '')
-        .trim()
-        .slice(0, 1000) // cap at 1000 chars
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: dbError } = await (supabase as any)
-        .from('messages')
-        .insert({
-          id: messageId,
-          recipient_id: profile.id,
-          audio_url: publicUrl,
-          transcript: cleanTranscript,
-          duration_seconds: Math.min(duration, MAX_DURATION),
-        })
-
-      if (dbError) throw dbError
-
-      setIsSent(true)
-      toast('Your voice was sent 👻', 'success')
-    } catch (err) {
-      console.error('Error sending message:', err)
-      toast('Failed to send message', 'error')
-      throw err
-    } finally {
-      setIsSubmitting(false)
-    }
+    setIsSent(true)
+    toast('Your voice was sent 👻', 'success')
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to send message'
+    toast(message, 'error')
+    throw err
+  } finally {
+    setIsSubmitting(false)
   }
+}
 
   if (loading) {
     return (
