@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
-import { useToast } from '../components/Toast'
+import { useToast } from '../contexts/ToastContext'
 import { ChevronLeft, Camera, Trash2, User, Save } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 

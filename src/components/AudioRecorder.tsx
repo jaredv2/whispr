@@ -4,7 +4,7 @@ import { useAudioRecorder } from '../hooks/useAudioRecorder'
 import type { RecordingResult } from '../hooks/useAudioRecorder'
 import WaveformVisualizer from './WaveformVisualizer'
 import AudioPlayer from './AudioPlayer'
-import { useToast } from './Toast'
+import { useToast } from '../contexts/ToastContext'
 import { useTranslation } from 'react-i18next'
 
 interface AudioRecorderProps {
@@ -79,7 +79,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete, isSu
         <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-gray-500">{t('send.preview')}</label>
-            <AudioPlayer src={result.url} />
+            <AudioPlayer key={result.url} src={result.url} />
           </div>
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-gray-500">{t('send.transcription')}</label>

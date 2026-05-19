@@ -13,7 +13,8 @@ const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({ isRecording, st
 
   useEffect(() => {
     if (isRecording && stream) {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      const audioContext = new AudioContextClass()
       const source = audioContext.createMediaStreamSource(stream)
       const analyser = audioContext.createAnalyser()
       analyser.fftSize = 256
@@ -29,7 +30,7 @@ const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({ isRecording, st
         if (!canvasRef.current || !analyserRef.current || !dataArrayRef.current) return
         
         animationRef.current = requestAnimationFrame(draw)
-        analyserRef.current.getByteFrequencyData(dataArrayRef.current as any)
+        analyserRef.current.getByteFrequencyData(dataArrayRef.current)
 
         const canvas = canvasRef.current
         const ctx = canvas.getContext('2d')

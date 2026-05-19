@@ -9,6 +9,7 @@ export interface AuthContextType {
   session: Session | null
   profile: Profile | null
   loading: boolean
+  profileLoaded: boolean
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>

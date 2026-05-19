@@ -27,14 +27,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className, onFirstPlay }
     const audio = new Audio()
     audioRef.current = audio
 
-    setIsPlaying(false)
-    setProgress(0)
-    setCurrentTime(0)
-    setDuration(0)
-    setError(false)
-    setLoading(true)
-    setHasPlayed(false)
-
     const handleCanPlay = () => setLoading(false)
 
     const handleTimeUpdate = () => {

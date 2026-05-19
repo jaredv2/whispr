@@ -1,30 +1,12 @@
-import React, { useState, createContext, useContext, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react'
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
-
-type ToastType = 'success' | 'error' | 'info'
+import { cn } from '../lib/utils'
+import { ToastContext, type ToastType } from '../contexts/ToastContext'
 
 interface Toast {
   id: string
   message: string
   type: ToastType
-}
-
-interface ToastContextType {
-  toast: (message: string, type?: ToastType) => void
-}
-
-const ToastContext = createContext<ToastContextType | undefined>(undefined)
-
-export const useToast = () => {
-  const context = useContext(ToastContext)
-  if (!context) throw new Error('useToast must be used within ToastProvider')
-  return context
 }
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

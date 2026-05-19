@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useToast } from '../components/Toast'
+import { useToast } from '../contexts/ToastContext'
 import { useTranslation } from 'react-i18next'
 import LangSwitcher from '../components/LangSwitcher'
 

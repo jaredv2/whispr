@@ -21,6 +21,8 @@ const AuthCallback: React.FC = () => {
         .eq('id', session.user.id)
         .single()
 
+      console.log('Fetched profile data:', data, 'Error:', error)
+
       if (data?.username) {
         navigate('/inbox', { replace: true })
       } else {

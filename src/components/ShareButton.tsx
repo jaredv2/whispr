@@ -1,6 +1,6 @@
 import React from 'react'
 import { Share2, Copy } from 'lucide-react'
-import { useToast } from './Toast'
+import { useToast } from '../contexts/ToastContext'
 import { useTranslation } from 'react-i18next'
 
 interface ShareButtonProps {

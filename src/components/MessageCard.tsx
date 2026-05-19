@@ -54,7 +54,7 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, onListened }) => {
       </div>
 
       <div onClick={handlePlay}>
-        <AudioPlayer src={message.audio_url} />
+        <AudioPlayer key={message.audio_url} src={message.audio_url} />
       </div>
 
       {message.transcript && (
