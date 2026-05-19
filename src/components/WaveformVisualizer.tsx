@@ -30,7 +30,7 @@ const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({ isRecording, st
         if (!canvasRef.current || !analyserRef.current || !dataArrayRef.current) return
         
         animationRef.current = requestAnimationFrame(draw)
-        analyserRef.current.getByteFrequencyData(dataArrayRef.current)
+        analyserRef.current.getByteFrequencyData(dataArrayRef.current as Uint8Array<ArrayBuffer>)
 
         const canvas = canvasRef.current
         const ctx = canvas.getContext('2d')
