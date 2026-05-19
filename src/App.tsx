@@ -1,9 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ToastProvider } from './components/Toast'
 import ProtectedRoute from './components/ProtectedRoute'
+import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 
-// Pages
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
@@ -11,11 +11,6 @@ import Inbox from './pages/Inbox'
 import SendPage from './pages/SendPage'
 import Settings from './pages/Settings'
 import AuthCallback from './pages/AuthCallback'
-import PWAUpdatePrompt from './components/PWAUpdatePrompt'
-// inside your return:
-
-
-// inside your routes:
 
 const NotFound = () => (
   <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
@@ -27,49 +22,24 @@ const NotFound = () => (
   </div>
 )
 
-import { Link } from 'react-router-dom'
-
 function App() {
   return (
     <ToastProvider>
-      <PWAUpdatePrompt />
       <AuthProvider>
         <Router>
+          {/* ✅ PWAUpdatePrompt inside Router so it can use router context if needed */}
+          <PWAUpdatePrompt />
           <div className="min-h-screen bg-[#0a0a0a]">
             <Routes>
-              {/* Public Routes */}
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/u/:username" element={<SendPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
-              
-              {/* Protected Routes */}
-              <Route 
-                path="/onboarding" 
-                element={
-                  <ProtectedRoute>
-                    <Onboarding />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/inbox" 
-                element={
-                  <ProtectedRoute>
-                    <Inbox />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/settings" 
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                } 
-              />
 
-              {/* Catch-all */}
+              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+              <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
               <Route path="/404" element={<NotFound />} />
               <Route path="*" element={<Navigate to="/404" replace />} />
             </Routes>

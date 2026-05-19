@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { type Session, type User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { AuthContext } from './AuthContextInstance'
@@ -7,7 +7,6 @@ import { type Database } from '../lib/database.types'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
-// ✅ Always use production URL in prod, localhost in dev
 const getRedirectUrl = () => {
   if (import.meta.env.PROD) {
     return 'https://usewhispr.vercel.app/auth/callback'
@@ -20,6 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const initializedRef = useRef(false) // ✅ prevent double-init
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -34,51 +34,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(null)
         } else {
           console.error('Error fetching profile:', error)
+          setProfile(null)
         }
       } else {
         setProfile(data)
       }
     } catch (err) {
       console.error('Unexpected error fetching profile:', err)
+      setProfile(null)
     }
   }
 
   useEffect(() => {
-    const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setSession(session)
-      setUser(session?.user ?? null)
+    let mounted = true
 
-      if (session?.user) {
-        await fetchProfile(session.user.id)
+    // ✅ Single source of truth — onAuthStateChange fires immediately
+    // with the existing session from localStorage on mount (INITIAL_SESSION event)
+    // No need for a separate getSession call
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return
+
+        console.log('Auth event:', event)
+
+        setSession(session)
+        setUser(session?.user ?? null)
+
+        if (session?.user) {
+          await fetchProfile(session.user.id)
+        } else {
+          setProfile(null)
+        }
+
+        // ✅ Only set loading false once — after first event resolves
+        if (!initializedRef.current) {
+          initializedRef.current = true
+          setLoading(false)
+        }
       }
+    )
 
-      setLoading(false)
+    // ✅ Safety fallback — if onAuthStateChange never fires (network issue etc)
+    // stop the spinner after 5s so user isn't stuck forever
+    const fallback = setTimeout(() => {
+      if (mounted && !initializedRef.current) {
+        initializedRef.current = true
+        setLoading(false)
+      }
+    }, 5000)
+
+    return () => {
+      mounted = false
+      clearTimeout(fallback)
+      subscription.unsubscribe()
     }
-
-    initAuth()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-
-      if (session?.user) {
-        await fetchProfile(session.user.id)
-      } else {
-        setProfile(null)
-      }
-
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
   }, [])
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: getRedirectUrl(), // ✅ correct URL per environment
+        redirectTo: getRedirectUrl(),
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
