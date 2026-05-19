@@ -1,0 +1,102 @@
+{
+  "common": {
+    "back": "Retour",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "continue": "Continuer",
+    "signOut": "Se déconnecter",
+    "error": "Une erreur s'est produite"
+  },
+  "landing": {
+    "tagline": "Envoie des messages vocaux anonymes à n'importe qui. Sans compte pour les expéditeurs, vie privée garantie.",
+    "cta": "Obtenir ton lien",
+    "feature1Title": "100% Anonyme",
+    "feature1Sub": "Ton identité n'est jamais révélée. Pas d'ID expéditeur, pas de tracking.",
+    "feature2Title": "Partage Partout",
+    "feature2Sub": "Obtiens un lien unique et partage-le dans ta bio ou tes stories.",
+    "feature3Title": "Voix Uniquement",
+    "feature3Sub": "L'émotion de la voix avec la sécurité de l'anonymat.",
+    "footer": "© 2026 Whispr • Fait pour les silencieux."
+  },
+  "login": {
+    "title": "Bon retour.",
+    "subtitle": "Accède à ton lien Whispr et écoute ce que les gens ont à dire.",
+    "google": "Continuer avec Google",
+    "terms": "En continuant, tu acceptes nos Conditions d'utilisation et notre Politique de confidentialité. Nous utilisons uniquement ton compte Google pour l'authentification.",
+    "failed": "Connexion échouée",
+    "failedToast": "Connexion échouée. Réessaie."
+  },
+  "onboarding": {
+    "step1Title": "Choisis un pseudo.",
+    "step1Sub": "Ce sera ton lien Whispr unique.",
+    "step2Title": "Dis-nous en plus.",
+    "step2Sub": "Ajoute un nom d'affichage et une courte bio.",
+    "step3Title": "Une dernière chose.",
+    "step3Sub": "Ajoute un avatar pour que les gens te reconnaissent.",
+    "step4Title": "Tu es prêt·e !",
+    "step4Sub": "Ton lien Whispr est en ligne. Partage-le pour recevoir des messages vocaux.",
+    "usernamePlaceholder": "pseudo",
+    "usernameTaken": "Pris",
+    "displayNamePlaceholder": "Nom d'affichage",
+    "bioPlaceholder": "Bio (optionnel)",
+    "completeSetup": "Terminer la configuration",
+    "yourLink": "Ton lien",
+    "goToInbox": "Aller à la boîte de réception",
+    "saveError": "Échec de la sauvegarde du profil"
+  },
+  "inbox": {
+    "title": "Boîte de réception",
+    "total": "{{count}} au total",
+    "empty": "Silence... pour l'instant.",
+    "emptyHint": "Partage ton lien pour recevoir ton premier message vocal.",
+    "yourLink": "Ton lien Whispr",
+    "linkHint": "Partage-le pour recevoir des messages vocaux anonymes."
+  },
+  "send": {
+    "tapToRecord": "Appuie pour enregistrer",
+    "recording": "{{duration}}s / 60s",
+    "sendButton": "Envoyer le Whispr",
+    "discard": "Supprimer",
+    "preview": "Aperçu",
+    "transcription": "Transcription",
+    "transcriptHint": "C'est ce que nous avons entendu. Tu peux le modifier si besoin.",
+    "noTranscript": "Aucune transcription générée...",
+    "sent": "Envoyé !",
+    "sentSub": "Ton message a été livré 👻\nIl l'entendra bientôt.",
+    "sendAnother": "En envoyer un autre",
+    "createOwn": "Crée ton propre Whispr",
+    "anonymous": "Ton message est 100% anonyme.\nLe destinataire entendra ta voix mais ne saura pas que c'est toi.",
+    "notFound": "Utilisateur introuvable.",
+    "notFoundSub": "Ce lien Whispr ne semble pas exister.",
+    "goHome": "Accueil",
+    "emptyRecording": "Enregistrement vide — réessaie",
+    "tooLarge": "Enregistrement trop volumineux (max 10 Mo)",
+    "tooLong": "Enregistrement trop long (max 60s)",
+    "successToast": "Ton message vocal a été envoyé 👻",
+    "failedError": "Échec de l'envoi du message",
+    "micError": "Impossible d'accéder au microphone"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "displayName": "Nom d'affichage",
+    "bio": "Bio",
+    "bioPlaceholder": "Dis aux gens quoi envoyer...",
+    "dangerZone": "Zone dangereuse",
+    "deleteAll": "Supprimer tous les messages",
+    "deleteConfirm": "Cela supprimera définitivement tous tes messages vocaux et fichiers audio. Impossible d'annuler.",
+    "deleteYes": "Oui, tout supprimer",
+    "profileUpdated": "Profil mis à jour",
+    "deleteSuccess": "Tous les messages supprimés"
+  },
+  "messageCard": {
+    "seconds": "{{count}} secondes",
+    "showTranscript": "Voir la transcription",
+    "hideTranscript": "Masquer la transcription"
+  },
+  "share": {
+    "button": "Partager le lien",
+    "text": "Envoie-moi un message vocal anonyme !",
+    "copied": "Lien copié !",
+    "copyFailed": "Échec de la copie du lien"
+  }
+}

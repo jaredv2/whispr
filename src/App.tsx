@@ -11,6 +11,9 @@ import Inbox from './pages/Inbox'
 import SendPage from './pages/SendPage'
 import Settings from './pages/Settings'
 import AuthCallback from './pages/AuthCallback'
+import PWAUpdatePrompt from './components/PWAUpdatePrompt'
+// inside your return:
+
 
 // inside your routes:
 
@@ -29,6 +32,7 @@ import { Link } from 'react-router-dom'
 function App() {
   return (
     <ToastProvider>
+      <PWAUpdatePrompt />
       <AuthProvider>
         <Router>
           <div className="min-h-screen bg-[#0a0a0a]">

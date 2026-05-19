@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Play, Pause } from 'lucide-react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { Play, Pause, RotateCcw } from 'lucide-react'
 
 interface AudioPlayerProps {
   src: string
@@ -13,34 +13,43 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className, onFirstPlay }
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [hasPlayed, setHasPlayed] = useState(false)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const progressRef = useRef<HTMLDivElement>(null)
+  const onFirstPlayRef = useRef(onFirstPlay) // ✅ stable ref — no stale closure
 
+  useEffect(() => { onFirstPlayRef.current = onFirstPlay }, [onFirstPlay])
+
+  // ✅ Recreate audio element on src change — fixes stuck player on remount
   useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
+    const audio = new Audio()
+    audioRef.current = audio
 
-    // Reset state when src changes
     setIsPlaying(false)
     setProgress(0)
     setCurrentTime(0)
     setDuration(0)
     setError(false)
+    setLoading(true)
+    setHasPlayed(false)
+
+    const handleCanPlay = () => setLoading(false)
 
     const handleTimeUpdate = () => {
-      if (!isFinite(audio.duration)) return
+      if (!isFinite(audio.duration) || audio.duration === 0) return
       setCurrentTime(audio.currentTime)
       setProgress((audio.currentTime / audio.duration) * 100)
     }
 
     const handleLoadedMetadata = () => {
-      if (isFinite(audio.duration)) {
+      if (isFinite(audio.duration) && audio.duration > 0) {
         setDuration(audio.duration)
+        setLoading(false)
       }
     }
 
-    // Some browsers fire durationchange after loadedmetadata
     const handleDurationChange = () => {
       if (isFinite(audio.duration) && audio.duration > 0) {
         setDuration(audio.duration)
@@ -49,64 +58,99 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className, onFirstPlay }
 
     const handleEnded = () => {
       setIsPlaying(false)
-      setProgress(0)
-      setCurrentTime(0)
-      audio.currentTime = 0
+      setProgress(100) // ✅ stay at end, don't reset — feels more natural
+      setCurrentTime(audio.duration)
     }
 
     const handleError = () => {
-      console.error('Audio error:', audio.error?.message, 'src:', src)
+      console.error('Audio error:', audio.error?.code, audio.error?.message)
       setError(true)
       setIsPlaying(false)
+      setLoading(false)
     }
 
+    const handleStall = () => {
+      // ✅ handle network stall — reload src
+      if (!isPlaying) return
+      audio.load()
+    }
+
+    audio.addEventListener('canplay', handleCanPlay)
     audio.addEventListener('timeupdate', handleTimeUpdate)
     audio.addEventListener('loadedmetadata', handleLoadedMetadata)
     audio.addEventListener('durationchange', handleDurationChange)
     audio.addEventListener('ended', handleEnded)
     audio.addEventListener('error', handleError)
+    audio.addEventListener('stall', handleStall)
+
+    audio.preload = 'metadata'
+    audio.src = src
 
     return () => {
+      audio.pause()
+      audio.src = ''
+      audio.removeEventListener('canplay', handleCanPlay)
       audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
       audio.removeEventListener('durationchange', handleDurationChange)
       audio.removeEventListener('ended', handleEnded)
       audio.removeEventListener('error', handleError)
+      audio.removeEventListener('stall', handleStall)
     }
-  }, [src])
+  }, [src]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const togglePlay = async () => {
+  const togglePlay = useCallback(async () => {
     const audio = audioRef.current
-    if (!audio || error) return
+    if (!audio || error || loading) return
 
     try {
       if (isPlaying) {
         audio.pause()
         setIsPlaying(false)
       } else {
+        // ✅ If ended, restart
+        if (audio.ended || audio.currentTime >= audio.duration) {
+          audio.currentTime = 0
+          setProgress(0)
+          setCurrentTime(0)
+        }
         await audio.play()
         setIsPlaying(true)
         if (!hasPlayed) {
           setHasPlayed(true)
-          onFirstPlay?.()
+          onFirstPlayRef.current?.()
         }
       }
     } catch (err) {
       console.error('Playback failed:', err)
       setError(true)
     }
-  }
+  }, [isPlaying, error, loading, hasPlayed])
 
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     const audio = audioRef.current
-    if (!audio || !isFinite(audio.duration)) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const percent = (e.clientX - rect.left) / rect.width
+    if (!audio || !isFinite(audio.duration) || audio.duration === 0) return
+
+    const rect = progressRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const percent = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1)
     audio.currentTime = percent * audio.duration
-  }
+    setProgress(percent * 100)
+    setCurrentTime(audio.currentTime)
+  }, [])
+
+  const handleRestart = useCallback(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.currentTime = 0
+    setProgress(0)
+    setCurrentTime(0)
+  }, [])
 
   const formatTime = (time: number) => {
-    if (!isFinite(time)) return '0:00'
+    if (!isFinite(time) || time < 0) return '0:00'
     const mins = Math.floor(time / 60)
     const secs = Math.floor(time % 60)
     return `${mins}:${secs.toString().padStart(2, '0')}`
@@ -114,7 +158,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className, onFirstPlay }
 
   if (error) {
     return (
-      <div className={`flex items-center gap-3 rounded-xl bg-gray-900/50 p-4 ${className}`}>
+      <div className={`flex items-center gap-3 rounded-xl bg-gray-900/50 p-4 ${className ?? ''}`}>
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800">
           <Play size={20} className="text-gray-600" />
         </div>
@@ -124,33 +168,39 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className, onFirstPlay }
   }
 
   return (
-    <div className={`flex flex-col gap-2 rounded-xl bg-gray-900/50 p-4 ${className}`}>
-      {/* Multiple sources for cross-browser support */}
-      <audio ref={audioRef} preload="metadata">
-        <source src={src} type="audio/webm" />
-        <source src={src} type="audio/ogg" />
-        <source src={src} type="audio/mp4" />
-      </audio>
-
+    <div className={`flex flex-col gap-2 rounded-xl bg-gray-900/50 p-4 ${className ?? ''}`}>
       <div className="flex items-center gap-4">
+        {/* Play / Pause */}
         <button
           onClick={togglePlay}
-          className="flex h-10 w-10 active-scale items-center justify-center rounded-full bg-purple-600 text-white transition-colors hover:bg-purple-700"
+          disabled={loading}
+          className="flex h-10 w-10 active-scale items-center justify-center rounded-full bg-purple-600 text-white transition-colors hover:bg-purple-700 disabled:opacity-50"
         >
-          {isPlaying
-            ? <Pause size={20} fill="currentColor" />
-            : <Play size={20} className="ml-0.5" fill="currentColor" />
-          }
+          {loading ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          ) : isPlaying ? (
+            <Pause size={20} fill="currentColor" />
+          ) : (
+            <Play size={20} className="ml-0.5" fill="currentColor" />
+          )}
         </button>
 
+        {/* Progress bar — touch + click seek */}
         <div className="flex flex-1 flex-col gap-1">
           <div
-            className="relative h-1.5 w-full cursor-pointer overflow-hidden rounded-full bg-gray-700"
+            ref={progressRef}
+            className="relative h-3 w-full cursor-pointer rounded-full bg-gray-700"
             onClick={handleSeek}
+            onTouchStart={handleSeek}
           >
             <div
-              className="absolute left-0 top-0 h-full bg-purple-500 transition-[width] duration-100"
+              className="absolute left-0 top-0 h-full rounded-full bg-purple-500 transition-[width] duration-100"
               style={{ width: `${progress}%` }}
+            />
+            {/* ✅ Scrubber thumb */}
+            <div
+              className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-white shadow"
+              style={{ left: `calc(${progress}% - 6px)` }}
             />
           </div>
           <div className="flex justify-between text-[10px] font-medium text-gray-500">
@@ -158,6 +208,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className, onFirstPlay }
             <span>{formatTime(duration)}</span>
           </div>
         </div>
+
+        {/* ✅ Restart button */}
+        <button
+          onClick={handleRestart}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-gray-600 hover:text-gray-400 transition-colors"
+        >
+          <RotateCcw size={14} />
+        </button>
       </div>
     </div>
   )

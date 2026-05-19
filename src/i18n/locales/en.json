@@ -1,0 +1,102 @@
+{
+  "common": {
+    "back": "Back",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "signOut": "Sign Out",
+    "error": "Something went wrong"
+  },
+  "landing": {
+    "tagline": "Send anonymous voice notes to anyone. No accounts needed for senders, full privacy for everyone.",
+    "cta": "Get your link",
+    "feature1Title": "100% Anonymous",
+    "feature1Sub": "Your identity is never revealed. No sender IDs, no tracking.",
+    "feature2Title": "Share Anywhere",
+    "feature2Sub": "Get a unique link and share it on your bio or stories.",
+    "feature3Title": "Voice Only",
+    "feature3Sub": "The emotion of voice with the safety of anonymity.",
+    "footer": "© 2026 Whispr • Built for the quiet ones."
+  },
+  "login": {
+    "title": "Welcome back.",
+    "subtitle": "Continue to manage your Whispr link and hear what people are saying.",
+    "google": "Continue with Google",
+    "terms": "By continuing, you agree to our Terms of Service and Privacy Policy. We only use your Google account for authentication.",
+    "failed": "Login failed",
+    "failedToast": "Login failed. Please try again."
+  },
+  "onboarding": {
+    "step1Title": "Pick a username.",
+    "step1Sub": "This will be your unique Whispr link.",
+    "step2Title": "Tell us more.",
+    "step2Sub": "Add a display name and a short bio.",
+    "step3Title": "One last thing.",
+    "step3Sub": "Add an avatar so people know it's you.",
+    "step4Title": "You're ready!",
+    "step4Sub": "Your Whispr link is live. Share it to start receiving voices.",
+    "usernamePlaceholder": "username",
+    "usernameTaken": "Taken",
+    "displayNamePlaceholder": "Display Name",
+    "bioPlaceholder": "Bio (optional)",
+    "completeSetup": "Complete Setup",
+    "yourLink": "Your link",
+    "goToInbox": "Go to Inbox",
+    "saveError": "Failed to save profile"
+  },
+  "inbox": {
+    "title": "Inbox",
+    "total": "{{count}} total",
+    "empty": "Silence... for now.",
+    "emptyHint": "Share your link to get your first voice note.",
+    "yourLink": "Your Whispr link",
+    "linkHint": "Share this to receive anonymous voices."
+  },
+  "send": {
+    "tapToRecord": "Tap to record",
+    "recording": "{{duration}}s / 60s",
+    "sendButton": "Send Whispr",
+    "discard": "Discard",
+    "preview": "Preview",
+    "transcription": "Transcription",
+    "transcriptHint": "This is what we heard. You can edit it if needed.",
+    "noTranscript": "No transcript generated...",
+    "sent": "Sent!",
+    "sentSub": "Your voice was delivered 👻\nThey'll hear it soon.",
+    "sendAnother": "Send another one",
+    "createOwn": "Create your own Whispr",
+    "anonymous": "Your message is 100% anonymous.\nThe recipient will hear your voice but won't know it's you.",
+    "notFound": "User not found.",
+    "notFoundSub": "This Whispr link doesn't seem to exist.",
+    "goHome": "Go Home",
+    "emptyRecording": "Recording is empty — please try again",
+    "tooLarge": "Recording too large (max 10MB)",
+    "tooLong": "Recording too long (max 60s)",
+    "successToast": "Your voice was sent 👻",
+    "failedError": "Failed to send message",
+    "micError": "Could not access microphone"
+  },
+  "settings": {
+    "title": "Settings",
+    "displayName": "Display Name",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell people what to say...",
+    "dangerZone": "Danger Zone",
+    "deleteAll": "Delete All Messages",
+    "deleteConfirm": "This will permanently delete all your voice messages and audio files. Cannot be undone.",
+    "deleteYes": "Yes, delete all",
+    "profileUpdated": "Profile updated",
+    "deleteSuccess": "All messages deleted"
+  },
+  "messageCard": {
+    "seconds": "{{count}} seconds",
+    "showTranscript": "Show Transcript",
+    "hideTranscript": "Hide Transcript"
+  },
+  "share": {
+    "button": "Share Link",
+    "text": "Send me an anonymous voice message!",
+    "copied": "Link copied to clipboard!",
+    "copyFailed": "Failed to copy link"
+  }
+}
