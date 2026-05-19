@@ -93,18 +93,6 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete, isSu
             <AudioPlayer src={result.url} />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Transcription</label>
-            <textarea
-              value={editedTranscript}
-              onChange={(e) => setEditedTranscript(e.target.value)}
-              placeholder="No transcript generated..."
-              className="w-full rounded-xl bg-gray-900/50 p-4 text-sm text-white border border-gray-800 focus:outline-none focus:border-purple-500 transition-colors resize-none"
-              rows={3}
-            />
-            <p className="text-[10px] text-gray-500 italic">This is what we heard. You can edit it if needed.</p>
-          </div>
-
           <div className="flex gap-4">
             <button
               onClick={handleDiscard}

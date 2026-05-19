@@ -61,10 +61,12 @@ const SendPage: React.FC = () => {
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-message`,
       {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, // ← add this
+        },
         body: formData,
       }
     )
-
     const json = await res.json()
 
     if (!res.ok) {
