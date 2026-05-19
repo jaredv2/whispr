@@ -48,9 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         return null
       }
-      
-      console.log('Profile fetched successfully:', data?.username)
-      
+            
       // ✅ Cache the profile for future reloads
       if (data) {
         localStorage.setItem(`profile_${userId}`, JSON.stringify(data))
