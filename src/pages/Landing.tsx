@@ -1,11 +1,37 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Mic, Shield, Share2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import LangSwitcher from '../components/LangSwitcher'
+import { useAuth } from '../hooks/useAuth'
 
 const Landing: React.FC = () => {
   const { t } = useTranslation()
+  const { user, profile, loading } = useAuth()
+  const navigate = useNavigate()
+
+  // ✅ Redirect logged-in users away from landing
+  useEffect(() => {
+    if (!loading && user) {
+      if (profile?.username) {
+        navigate('/inbox', { replace: true })
+      } else {
+        navigate('/onboarding', { replace: true })
+      }
+    }
+  }, [user, profile, loading, navigate])
+
+  // ✅ Don't flash landing page while auth resolves
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent" />
+      </div>
+    )
+  }
+
+  // ✅ Don't render landing if user is logged in (redirect is in flight)
+  if (user) return null
 
   return (
     <div className="flex flex-col items-center px-6 py-12 md:py-24">
@@ -36,6 +62,7 @@ const Landing: React.FC = () => {
           <div
             key={i}
             className="w-1.5 rounded-full bg-purple-500 animate-pulse-soft"
+            // eslint-disable-next-line react-hooks/purity
             style={{ height: `${Math.random() * 80 + 20}%`, animationDelay: `${i * 0.05}s` }}
           />
         ))}

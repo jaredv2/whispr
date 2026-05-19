@@ -28,10 +28,12 @@ const Login: React.FC = () => {
     }
   }, [location, toast, t])
 
+  // ✅ Redirect if already logged in
   useEffect(() => {
-    if (user && !loading && !isRedirecting) {
+    if (!loading && user && !isRedirecting) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsRedirecting(true)
-      if (profile && profile.username) {
+      if (profile?.username) {
         navigate('/inbox', { replace: true })
       } else {
         navigate('/onboarding', { replace: true })
@@ -45,6 +47,15 @@ const Login: React.FC = () => {
     } catch {
       toast(t('login.failedToast'), 'error')
     }
+  }
+
+  // ✅ Show spinner while resolving — never flash login page to logged-in user
+  if (loading || (user && isRedirecting)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent" />
+      </div>
+    )
   }
 
   return (
